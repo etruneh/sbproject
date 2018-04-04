@@ -67,7 +67,9 @@ def a1():
 	i = 0
 	for each_set in combined:
 		for sentence in each_set:
-			mydict.update({categories[i]:each_set[0]})
+			category_and_index = "Category " + str(i+1) + ": " + categories[i]
+			sample_question = each_set[0]
+			mydict.update({category_and_index:sample_question})
 		i += 1
 	return json.dumps(mydict)
 
