@@ -39,14 +39,13 @@ def categorizeSentence(string):
 	i = 0
 	for each_set in combined:
 		for sentence in each_set:
-			if checkSimilarity(string, sentence) > 0.60:
+			if checkSimilarity(string, sentence) > 0.70:
 				# print(checkSimilarity(string, sentence))
-				return categories[i]
+				return ["Category "+str(i+1)+": "+categories[i], "Closest question: "+sentence]
 		i += 1
 	if i == 5:
-		return 'Sentence was not above 60 percent similar with any category'
+		return 'Sentence was not above 70 percent similar with any category'
 	return null
-
 
 @app.route("/hello/")
 def hello():
@@ -61,6 +60,7 @@ def greeting():
 	message = "Hello, welcome to my little API. Use via query string parameters."
 	return message
 
+# An API that lists available categories: their index/ID, a sample question
 @app.route("/a1")
 def a1():
 	mydict = {}
@@ -73,6 +73,14 @@ def a1():
 		i += 1
 	return json.dumps(mydict)
 
+# An API that takes in a query text and returns the index/ID of the category it matched to and the closest question that made it match.
+@app.route("/a2")
+def a2():
+	query = request.args.get("query")
+	if not query:
+		abort(400, "/hello requires string argument 'query'")
+
+	return json.dumps(categorizeSentence(query))
 
 app.run()
 
