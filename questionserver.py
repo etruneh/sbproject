@@ -30,17 +30,29 @@ def check_similarity(string1, string2):
     doc2 = parse_text(string2)
     return doc1.similarity(doc2)
 
-def categorize_sentence(string):
+def categorize_sentence(querytext):
     i = 0
+    highest_similarity_float = 0 # the highest similarity score thus far
+    highest_similarity_question = "" # the highest similarity question thus far
+    highest_similarity_category_index = 0 # the index of the category of the highest similarity question thus far
+    categoryindex_similarity = {}
     for each_set in all_categories:
-        for sentence in each_set:
-            if checkSimilarity(string, sentence) > 0.70:
-                # print(checkSimilarity(string, sentence))
-                return ["Category "+str(i+1)+": "+categories[i], "Closest question: "+sentence]
+        for question in each_set:
+            similarity = check_similarity(querytext, question)
+            if similarity > 0.70:
+                categoryindex_similarity.update({i:similarity})
+                if max(categoryindex_similarity.values()) == similarity:
+                    highest_similarity_float = similarity
+                    highest_similarity_question = question
+                    highest_similarity_category_index = i
         i += 1
-    if i == 5:
+    if highest_similarity_float == 0:
         return 'Sentence was not above 70 percent similar with any category'
-    return null
+
+    # test = ["Category "+str(highest_similarity_category_index + 1)+": "+categories[highest_similarity_category_index], "Closest question: "+highest_similarity_question,"(for testing) similarity = "+str(highest_similarity_float),json.dumps(categoryindex_similarity)]
+    # return test
+
+    return ["Category "+str(highest_similarity_category_index + 1)+": "+categories[highest_similarity_category_index], "Closest question: "+highest_similarity_question]
 
 
 @app.route("/")
@@ -66,9 +78,9 @@ def list_available_categories():
 def find_match():
     querytext = request.args.get("querytext")
     if not querytext:
-        abort(400, "/hello requires string argument 'querytext'")
+        abort(400, "/find_match requires string argument 'querytext'")
 
-    return json.dumps(categorizeSentence(querytext))
+    return json.dumps(categorize_sentence(querytext))
 
 app.run()
 
