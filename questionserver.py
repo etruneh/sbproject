@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 nlp = spacy.load('en')
 
-categories = ['Dorm rules', 'Food', 'Transportation', 'Financial Aid', 'Logistics']
+category_names = ['Dorm rules', 'Food', 'Transportation', 'Financial Aid', 'Logistics']
 
 dorm_rules = ['Are pets allowed in the dorms?', 'Are power strips allowed?', 'What are the policies on space heaters in dorms?']
 
@@ -30,7 +30,7 @@ def check_similarity(string1, string2):
     doc2 = parse_text(string2)
     return doc1.similarity(doc2)
 
-def categorize_sentence(querytext):
+def categorize_sentence(query_text):
     i = 0
     highest_similarity_float = 0 # the highest similarity score thus far
     highest_similarity_question = "" # the highest similarity question thus far
@@ -38,7 +38,7 @@ def categorize_sentence(querytext):
     categoryindex_similarity = {}
     for each_set in all_categories:
         for question in each_set:
-            similarity = check_similarity(querytext, question)
+            similarity = check_similarity(query_text, question)
             if similarity > 0.70:
                 categoryindex_similarity.update({i:similarity})
                 if max(categoryindex_similarity.values()) == similarity:
@@ -49,15 +49,16 @@ def categorize_sentence(querytext):
     if highest_similarity_float == 0:
         return 'Sentence was not above 70 percent similar with any category'
 
-    # test = ["Category "+str(highest_similarity_category_index + 1)+": "+categories[highest_similarity_category_index], "Closest question: "+highest_similarity_question,"(for testing) similarity = "+str(highest_similarity_float),json.dumps(categoryindex_similarity)]
+    # test = ["Category "+str(highest_similarity_category_index + 1)+": "+category_names[highest_similarity_category_index], "Closest question: "+highest_similarity_question,"(for testing) similarity = "+str(highest_similarity_float),json.dumps(categoryindex_similarity)]
     # return test
 
-    return ["Category "+str(highest_similarity_category_index + 1)+": "+categories[highest_similarity_category_index], "Closest question: "+highest_similarity_question]
+    return ["Category "+str(highest_similarity_category_index + 1)+": "+category_names[highest_similarity_category_index], "Closest question: "+highest_similarity_question]
 
 
 @app.route("/")
 def greeting():
     message = "Hello, welcome to my little API. Use via query string parameters."
+
     return message
 
 # An API that lists available categories: their index/ID, a sample question
@@ -67,20 +68,44 @@ def list_available_categories():
     i = 0
     for each_set in all_categories:
         for sentence in each_set:
-            category_and_index = "Category " + str(i+1) + ": " + categories[i]
+            category_and_index = "Category " + str(i) + ": " + category_names[i]
             sample_question = each_set[0]
             mydict.update({category_and_index:sample_question})
         i += 1
+
     return json.dumps(mydict)
 
 # An API that takes in a query text and returns the index/ID of the category it matched to and the closest question that made it match.
 @app.route("/find_match")
 def find_match():
-    querytext = request.args.get("querytext")
-    if not querytext:
-        abort(400, "/find_match requires string argument 'querytext'")
+    query_text = request.args.get("query_text")
+    if not query_text:
+        abort(400, "/find_match requires string argument 'query_text'")
 
-    return json.dumps(categorize_sentence(querytext))
+    return json.dumps(categorize_sentence(query_text))
+
+# An API that takes a category index/ID and a query text and then adds the query text to the category.
+@app.route("/add_query_text")
+def add_query_text():
+    category_index = request.args.get("category_index")
+    query_text = request.args.get("query_text")
+    message = ""
+    if not query_text:
+        abort(400, "/add_query_text requires string argument 'query_text'")
+    if not category_index:
+        abort(400, "/add_query_text requires string argument 'category_index'")
+    category_index = int(category_index)
+
+    category_to_update = all_categories[category_index]
+    old_length = len(category_to_update)
+    category_to_update.append(query_text)
+    if len(category_to_update) == old_length+1 and category_to_update[-1] == query_text:
+        message = "Question has been added to Category "+str(category_index)+": "+category_names[category_index]
+    else:
+        message = "Something went wrong during the process of adding the question to the category"
+
+    return message
+
 
 app.run()
 
