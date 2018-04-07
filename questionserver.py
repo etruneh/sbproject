@@ -106,6 +106,18 @@ def add_query_text():
 
     return message
 
+# An API that adds an entire category.
+@app.route("/add_category")
+def add_category():
+    category = request.args.get("category")
+    message = ""
+    if not category:
+        abort(400, "/add_category requires string argument 'category'")
+    category_names.append(category)
+    category_list = []
+
+    return "work in progress"
+
 
 app.run()
 
